@@ -2,7 +2,7 @@ import textwrap
 from typing import Iterator, TextIO
 # from translate import translate
 from tqdm import tqdm
-from model import Translator_GoogleTrans
+from model import Translator_GoogleTrans, Translator_GoogleGemini
 
 def format_timestamp(seconds: float, always_include_hours: bool = False, fractionalSeperator: str = '.'):
     assert seconds >= 0, "non-negative timestamp expected"
@@ -75,7 +75,8 @@ def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
         with open(Path(output_dir) / (audio_basename + ".srt"), "w", encoding="utf-8") as srt:
             write_srt(result["segments"], file=srt)
     """
-    translator = Translator_GoogleTrans()
+    # translator = Translator_GoogleTrans() # Standard
+    translator = Translator_GoogleGemini()
     for i, segment in tqdm(enumerate(transcript, start=1)):
         text = processText(segment['text'].strip(), maxLineWidth).replace('-->', '->')
         text = translator.translate(text)
