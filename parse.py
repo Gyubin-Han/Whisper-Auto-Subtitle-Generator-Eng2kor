@@ -1,5 +1,6 @@
 from pytube import YouTube
-from utils import write_srt, write_vtt, write_srt_ko, logging_time
+from utils import write_srt, write_vtt, write_srt_ko, write_srt_ko_v2
+from time_utils import logging_time
 from typing import Iterator
 from io import StringIO
 import os
@@ -25,7 +26,6 @@ def download_video(link):
     video = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download()
     return video
 
-@logging_time
 def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
     segmentStream = StringIO()
 
@@ -34,7 +34,7 @@ def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
     elif format == 'srt':
         write_srt(segments, file=segmentStream, maxLineWidth=maxLineWidth)
     elif format == 'srt_ko':
-        write_srt_ko(segments, file=segmentStream, maxLineWidth=maxLineWidth)
+        write_srt_ko_v2(segments, file=segmentStream, maxLineWidth=maxLineWidth)
     else:
         raise Exception("Unknown format " + format)
 
@@ -85,7 +85,6 @@ def process(link: str):
     with open("transcript_ko.srt", "w+",encoding='utf8') as f:
         f.writelines(results[3])
         f.close()
-        
         
     return results, video
 

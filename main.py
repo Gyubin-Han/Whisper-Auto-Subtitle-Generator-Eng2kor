@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 from parse import process
 
-
 app = FastAPI()
 
 origins = [
