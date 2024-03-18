@@ -1,17 +1,14 @@
 from pytube import YouTube
-from utils import write_srt, write_vtt, write_srt_ko
+from utils import write_srt, write_vtt, write_srt_ko, logging_time
 from typing import Iterator
 from io import StringIO
 import os
 import whisper
 import ffmpeg
 
-# For Debug 
-from cProfile import Profile
-from pstats import Stats
+loaded_model = whisper.load_model("medium") # 9sec
 
-loaded_model = whisper.load_model("medium")
-
+@logging_time
 def populate_metadata(link):
     yt = YouTube(link)
     author = yt.author
@@ -22,11 +19,13 @@ def populate_metadata(link):
     views = yt.views
     return author, title, description, thumbnail, length, views
 
+@logging_time
 def download_video(link):
     yt = YouTube(link)
     video = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download()
     return video
 
+@logging_time
 def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
     segmentStream = StringIO()
 
@@ -42,6 +41,7 @@ def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
     segmentStream.seek(0)
     return segmentStream.read()
 
+@logging_time
 def inference(link, loaded_model):
     yt = YouTube(link)
     path = yt.streams.filter(only_audio=True)[0].download(filename="audio.mp3")
@@ -54,6 +54,7 @@ def inference(link, loaded_model):
     return results["text"], vtt, srt, srt_ko, lang
 
 
+@logging_time
 def generate_subtitled_video(video, audio, transcript):
     video_file = ffmpeg.input(video)
     audio_file = ffmpeg.input(audio)
@@ -61,6 +62,7 @@ def generate_subtitled_video(video, audio, transcript):
     video_with_subs = open("final.mp4", "rb")
     return video_with_subs     
 
+@logging_time
 def process(link: str):
     
     author, title, description, thumbnail, length, views = populate_metadata(link)
@@ -87,11 +89,13 @@ def process(link: str):
         
     return results, video
 
+@logging_time
 def main():
     # loaded_model = whisper.load_model("base")
     
-    # link = "https://www.youtube.com/watch?v=1aA1WGON49E" # 1m 20
-    link = "https://www.youtube.com/watch?v=5m-5dMP0NTI" 
+    # link = "https://www.youtube.com/watch?v=1aA1WGON49E" # 1분 20초
+    link = "https://www.youtube.com/watch?v=5m-5dMP0NTI" # 5분
+    
     
     author, title, description, thumbnail, length, views = populate_metadata(link)
     results = inference(link, loaded_model)
@@ -118,13 +122,5 @@ def main():
     # video_with_subs = generate_subtitled_video(video, "audio.mp3", "transcript.srt")
     # video_with_subs = generate_subtitled_video(video, "audio.mp3", "transcript_ko.srt")
 if __name__ == "__main__":
-        
-    profiler = Profile()
-    profiler.runcall(main)
-    
-    stats = Stats(profiler)
-    stats.strip_dirs()
-    stats.sort_stats('cumulative') # 누적 통계
-    stats.print_stats(10)
-    stats.print_callers(.5, 'init')
+    main()
    

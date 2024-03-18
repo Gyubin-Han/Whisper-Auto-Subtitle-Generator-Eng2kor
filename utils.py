@@ -3,6 +3,16 @@ from typing import Iterator, TextIO
 # from translate import translate
 from tqdm import tqdm
 from model import Translator_GoogleTrans, Translator_GoogleGemini
+import time
+
+def logging_time(original_fn):
+    def wrapper_fn(*args, **kwargs):
+        start_time = time.time()
+        result = original_fn(*args, **kwargs)
+        end_time = time.time()
+        print("걸린 시간[{}]: {} sec".format(original_fn.__name__, end_time-start_time))
+        return result
+    return wrapper_fn
 
 def format_timestamp(seconds: float, always_include_hours: bool = False, fractionalSeperator: str = '.'):
     assert seconds >= 0, "non-negative timestamp expected"
@@ -19,8 +29,7 @@ def format_timestamp(seconds: float, always_include_hours: bool = False, fractio
 
     hours_marker = f"{hours:02d}:" if always_include_hours or hours > 0 else ""
     return f"{hours_marker}{minutes:02d}:{seconds:02d}{fractionalSeperator}{milliseconds:03d}"
-
-
+    
 def write_txt(transcript: Iterator[dict], file: TextIO):
     for segment in transcript:
         print(segment['text'].strip(), file=file, flush=True)
@@ -37,7 +46,7 @@ def write_vtt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
             file=file,
             flush=True,
         )
-
+        
 def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
     """
     Write a transcript to a file in SRT format.
@@ -96,3 +105,16 @@ def processText(text: str, maxLineWidth=None):
 
     lines = textwrap.wrap(text, width=maxLineWidth, tabsize=4)
     return '\n'.join(lines)
+
+
+def make_full_stop(text: str) -> list:
+    last_ch = text[-1]
+    
+    if last_ch == '.' or last_ch == '?' or last_ch == '!': # 이미 full-stop 이거나 QM, SM이라면
+        return text
+    elif last_ch == ',': # comma라면
+        return text[:-1] + '.' # 변경
+    elif last_ch.isalnum(): # 숫자거나 단어라면
+        return text + '.' # 구두점 추가
+    else: # 예외가 있을 수 있음 그런경우 text
+        return text
