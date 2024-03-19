@@ -90,6 +90,7 @@ def main():
     
     # link = "https://www.youtube.com/watch?v=1aA1WGON49E" # 1분 20초
     link = "https://www.youtube.com/watch?v=5m-5dMP0NTI" # 5분
+    # link = "https://www.youtube.com/watch?v=LK5j3pp0Too&t=2s" # 16분
     
     author, title, description, thumbnail, length, views = populate_metadata(link)
     save_path = make_path(title)
