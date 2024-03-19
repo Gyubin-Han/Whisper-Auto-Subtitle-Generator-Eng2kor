@@ -5,7 +5,8 @@ from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from parse import process
+from parse import process, populate_metadata
+from utils import make_path
 
 app = FastAPI()
 
@@ -31,30 +32,25 @@ def read_item(item_id: int, q: Union[str, None] = None):
 
 @app.get("/youtube", response_class=FileResponse)
 def get_yt_link(link: str):
-    
-    results, video = process(link)
-    
-    with open("transcript.txt", "w+", encoding='utf8') as f:
-        f.writelines(results[0])
-        f.close()
+   
+    results, video, save_path, title = process(link)
         
-    with open("transcript.vtt", "w+",encoding='utf8') as f:
-        f.writelines(results[1])
-        f.close()
-        
-    with open("transcript.srt", "w+",encoding='utf8') as f:
+    with open(save_path+f"{title}_en.srt", "w+",encoding='utf8') as f:
         f.writelines(results[2])
         f.close()
         
-    with open("transcript_ko.srt", "w+",encoding='utf8') as f:
+    with open(save_path+f"{title}.srt", "w+",encoding='utf8') as f:
         f.writelines(results[3])
         f.close()
                         
-    return FileResponse(path=video, media_type='application/octet-stream',filename="video.mp4")            
-    # return StreamingResponse(iterfile(),media_type="video/mp4")
+    return FileResponse(path=video, media_type='application/octet-stream',filename=f"{title}.mp4")
     
 @app.get("/youtube/subtitle_download", response_class=FileResponse)
-def get_yt_subtitle():
-    return FileResponse(path="transcript_ko.srt", media_type='application/octet-stream', filename='transcript.srt')
+def get_yt_subtitle(link: str):
+    
+    author, title, description, thumbnail, length, views = populate_metadata(link)
+    save_path = make_path(title)
+    
+    return FileResponse(path=save_path+f"{title}.srt", media_type='application/octet-stream', filename=f"{title}.srt")
         
     

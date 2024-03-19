@@ -1,13 +1,15 @@
 from pytube import YouTube
-from utils import write_srt, write_vtt, write_srt_ko, write_srt_ko_v2
-from time_utils import logging_time
 from typing import Iterator
 from io import StringIO
 import os
 import whisper
 import ffmpeg
 
-loaded_model = whisper.load_model("medium") # 9sec
+from utils import write_srt, write_vtt, write_srt_ko, write_srt_ko_v2, make_dirs, make_path
+from time_utils import logging_time
+from localization import get_current_date
+
+loaded_model = whisper.load_model("medium") # 9sec    
 
 @logging_time
 def populate_metadata(link):
@@ -21,9 +23,9 @@ def populate_metadata(link):
     return author, title, description, thumbnail, length, views
 
 @logging_time
-def download_video(link):
+def download_video(link, save_path):
     yt = YouTube(link)
-    video = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download()
+    video = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download(output_path=save_path)
     return video
 
 def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
@@ -42,9 +44,9 @@ def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
     return segmentStream.read()
 
 @logging_time
-def inference(link, loaded_model):
+def inference(link, loaded_model, save_path):
     yt = YouTube(link)
-    path = yt.streams.filter(only_audio=True)[0].download(filename="audio.mp3")
+    path = yt.streams.filter(only_audio=True)[0].download(filename=save_path+"audio.mp3")
     options = dict(task="transcribe", best_of=5)
     results = loaded_model.transcribe(path, **options)
     vtt = getSubs(results["segments"], "vtt", None)
@@ -66,54 +68,48 @@ def generate_subtitled_video(video, audio, transcript):
 def process(link: str):
     
     author, title, description, thumbnail, length, views = populate_metadata(link)
-    results = inference(link, loaded_model)
-    video = download_video(link)
+    save_path = make_path(title)
+    results = inference(link, loaded_model, save_path)
+    video = download_video(link, save_path)
     lang = results[3]
-    
-    with open("transcript.txt", "w+", encoding='utf8') as f:
-        f.writelines(results[0])
-        f.close()
         
-    with open("transcript.vtt", "w+",encoding='utf8') as f:
-        f.writelines(results[1])
-        f.close()
-        
-    with open("transcript.srt", "w+",encoding='utf8') as f:
-        f.writelines(results[2])
-        f.close()
-        
-    with open("transcript_ko.srt", "w+",encoding='utf8') as f:
-        f.writelines(results[3])
-        f.close()
-        
-    return results, video
+    return results, video, save_path, title
 
 @logging_time
 def main():
+    
+    # 저장할 target_path를 만드는 함수
+    def make_path(title=None):
+        current_date = get_current_date()
+        root_path = os.getcwd()
+        save_path = f'{root_path}/video/{current_date}/{title}/'
+        make_dirs(path=save_path)
+        return save_path
+    
     # loaded_model = whisper.load_model("base")
     
     # link = "https://www.youtube.com/watch?v=1aA1WGON49E" # 1분 20초
     link = "https://www.youtube.com/watch?v=5m-5dMP0NTI" # 5분
     
-    
     author, title, description, thumbnail, length, views = populate_metadata(link)
-    results = inference(link, loaded_model)
-    video = download_video(link)
+    save_path = make_path(title)
+    results = inference(link, loaded_model, save_path)
+    video = download_video(link, save_path)
     lang = results[3]
     
-    with open("transcript.txt", "w+", encoding='utf8') as f:
-        f.writelines(results[0])
-        f.close()
+    # with open(save_path+"transcript.txt", "w+", encoding='utf8') as f:
+    #     f.writelines(results[0])
+    #     f.close()
         
-    with open("transcript.vtt", "w+",encoding='utf8') as f:
-        f.writelines(results[1])
-        f.close()
+    # with open(save_path+"transcript.vtt", "w+",encoding='utf8') as f:
+    #     f.writelines(results[1])
+    #     f.close()
         
-    with open("transcript.srt", "w+",encoding='utf8') as f:
+    with open(save_path+f"{title}_en.srt", "w+",encoding='utf8') as f:
         f.writelines(results[2])
         f.close()
         
-    with open("transcript_ko.srt", "w+",encoding='utf8') as f:
+    with open(save_path+f"{title}.srt", "w+",encoding='utf8') as f:
         f.writelines(results[3])
         f.close()
         

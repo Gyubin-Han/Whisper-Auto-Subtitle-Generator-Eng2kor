@@ -4,6 +4,8 @@ from typing import Iterator, TextIO
 from tqdm import tqdm
 from model import Translator_GoogleTrans, Translator_GoogleGemini, Translator_GoogleGemini_Multi
 from time_utils import logging_time
+from localization import get_current_date
+import os
 
 def format_timestamp(seconds: float, always_include_hours: bool = False, fractionalSeperator: str = '.'):
     assert seconds >= 0, "non-negative timestamp expected"
@@ -152,3 +154,27 @@ def get_transcript_list(transcript: Iterator[dict], maxLineWidth=None) -> list:
         transcript_list.append(text)
         
     return transcript_list
+
+
+def make_dirs(path):
+    # 현재 디렉토리 경로 가져오기
+    current_dir = os.getcwd()
+
+    # 'video' 폴더 경로 생성
+    path_dir = os.path.join(current_dir, path)
+
+    # 'video' 폴더가 없으면 생성
+    if not os.path.exists(path_dir):
+        os.makedirs(path_dir)
+        print(f"'{path_dir}' 폴더가 생성되었습니다.")
+    else:
+        print(f"'{path_dir}' 폴더가 이미 존재합니다.")
+        
+def make_path(title: str) -> str: 
+        
+    # 저장할 target_path를 만드는 함수
+    current_date = get_current_date()
+    root_path = os.getcwd()
+    save_path = f'{root_path}/video/{current_date}/{title}/'
+    make_dirs(path=save_path)
+    return save_path
