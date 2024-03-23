@@ -1,0 +1,19 @@
+# Python
+__pycache__
+.venv
+
+# Java
+application.properties
+
+# Filename Extension
+*.mp4
+*.mp3
+*.txt
+*.srt
+*.vtt
+
+# env
+.env
+
+# Static Folders
+video/
