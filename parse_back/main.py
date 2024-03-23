@@ -1,12 +1,15 @@
 from typing import Union
 
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from pytube import YouTube
+from pytube.exceptions import RegexMatchError
 from parse import process, populate_metadata
 from utils import make_path
+from validators import is_valid_youtube, is_video_language_english
 
 app = FastAPI()
 
@@ -28,8 +31,15 @@ def read_root():
 
 @app.get("/youtube", response_class=FileResponse)
 def get_yt_link(link: str):
-   
+    
+    if not is_valid_youtube(link):
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+
     results, video, save_path, title = process(link)
+    
+    
+    if not is_video_language_english(results[4]):
+        raise HTTPException(status_code=400, detail="Other language video cannot be translated yet.")
         
     with open(save_path+f"{title}_en.srt", "w+",encoding='utf8') as f:
         f.writelines(results[2])

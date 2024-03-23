@@ -14,6 +14,8 @@ import re
 
 from time_utils import logging_time
 
+from fastapi import HTTPException
+
 # ! Need
 
 # login("your-huggingface-login-read-token")
@@ -261,13 +263,23 @@ class Translator_GoogleGemini_Multi_Separate:
         
         response = self.translator.generate_content(
                         prompt,
+                        safety_settings={
+                            "HARM_CATEGORY_HARASSMENT": "block_none",
+                            "HARM_CATEGORY_SEXUALLY_EXPLICIT": "block_none",
+                            "HARM_CATEGORY_HATE_SPEECH": "block_none",
+                            "HARM_CATEGORY_DANGEROUS_CONTENT": "block_none",
+                        },
                         generation_config=genai.types.GenerationConfig(
                             candidate_count=1,
                             temperature=0.4,
                         ),
                     )
         
-        translated_text_list = response.text.split("<lb/>")
+        try:
+            translated_text_list = response.text.split("<lb/>")
+        except:
+            raise HTTPException(status_code=500, detail="Response was blocked! Please Re-try")
+            
         translated_text_list = self.remove_strips(translated_text_list)        
         return translated_text_list[0]
         
@@ -300,20 +312,29 @@ class Translator_GoogleGemini_Multi_Separate:
 
         # Generate the text response using the model
         
-        
         # 최대 5번까지 재요청
         count = 0
         while count < 5: 
             
             response = self.translator.generate_content(
                 prompt,
+                safety_settings={
+                    "HARM_CATEGORY_HARASSMENT": "block_none",
+                    "HARM_CATEGORY_SEXUALLY_EXPLICIT": "block_none",
+                    "HARM_CATEGORY_HATE_SPEECH": "block_none",
+                    "HARM_CATEGORY_DANGEROUS_CONTENT": "block_none",
+                },
                 generation_config=genai.types.GenerationConfig(
                     candidate_count=1,
                     temperature=0.4,
                 ),
             )
             
-            translated_text_list = response.text.split("<lb/>")
+            try:
+                translated_text_list = response.text.split("<lb/>")
+            except:
+                raise HTTPException(status_code=500, detail="Response was blocked! Please Re-try")
+                
             translated_text_list = self.remove_strips(translated_text_list)
             
             count += 1

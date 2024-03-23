@@ -1,4 +1,6 @@
 from pytube import YouTube
+
+from fastapi import HTTPException
 from typing import Iterator
 from io import StringIO
 import os
@@ -24,8 +26,10 @@ def populate_metadata(link):
 
 @logging_time
 def download_video(link, save_path):
+
     yt = YouTube(link)
     video = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download(output_path=save_path)
+
     return video
 
 def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
