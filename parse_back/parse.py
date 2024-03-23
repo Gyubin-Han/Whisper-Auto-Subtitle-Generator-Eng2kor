@@ -5,7 +5,7 @@ import os
 import whisper
 import ffmpeg
 
-from utils import write_srt, write_vtt, write_srt_ko, write_srt_ko_v2, make_dirs, make_path
+from utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path
 from time_utils import logging_time
 from localization import get_current_date
 
@@ -36,7 +36,7 @@ def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
     elif format == 'srt':
         write_srt(segments, file=segmentStream, maxLineWidth=maxLineWidth)
     elif format == 'srt_ko':
-        write_srt_ko_v2(segments, file=segmentStream, maxLineWidth=maxLineWidth)
+        write_srt_ko(segments, file=segmentStream, maxLineWidth=maxLineWidth)
     else:
         raise Exception("Unknown format " + format)
 
@@ -86,8 +86,6 @@ def main():
         make_dirs(path=save_path)
         return save_path
     
-    # loaded_model = whisper.load_model("base")
-    
     # link = "https://www.youtube.com/watch?v=1aA1WGON49E" # 1분 20초
     link = "https://www.youtube.com/watch?v=5m-5dMP0NTI" # 5분
     # link = "https://www.youtube.com/watch?v=LK5j3pp0Too&t=2s" # 16분
@@ -97,14 +95,6 @@ def main():
     results = inference(link, loaded_model, save_path)
     video = download_video(link, save_path)
     lang = results[3]
-    
-    # with open(save_path+"transcript.txt", "w+", encoding='utf8') as f:
-    #     f.writelines(results[0])
-    #     f.close()
-        
-    # with open(save_path+"transcript.vtt", "w+",encoding='utf8') as f:
-    #     f.writelines(results[1])
-    #     f.close()
         
     with open(save_path+f"{title}_en.srt", "w+",encoding='utf8') as f:
         f.writelines(results[2])
@@ -114,9 +104,7 @@ def main():
         f.writelines(results[3])
         f.close()
         
-        
-    # video_with_subs = generate_subtitled_video(video, "audio.mp3", "transcript.srt")
-    # video_with_subs = generate_subtitled_video(video, "audio.mp3", "transcript_ko.srt")
+
 if __name__ == "__main__":
     main()
    
