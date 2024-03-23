@@ -6,18 +6,19 @@ Whisper Based Automatic Speech Recognition (ASR) and Translate using selectable 
 ## Use Models
 - ASR
     - [Whisper](https://github.com/openai/whisper)
-        - base 
-        - small
-        - medium 
+        - base  (VRAM ~ 1GB)
+        - small (VRAM ~ 2GB)
+        - medium (VRAM ~ 5GB)
 
 - Translate (models.py)
     - [NLLB](https://huggingface.co/NHNDQ/nllb-finetuned-ko2en)
     - [Antropic API (Claude3)](https://www.anthropic.com/api)
     - [Deep API](https://www.deepl.com/ko/pro-api?cta=header-pro-api)
     - [GoogleTrans](https://pypi.org/project/googletrans-py/)
+    - [Gemini Pro](https://ai.google.dev/?gad_source=1&gclid=Cj0KCQjw-_mvBhDwARIsAA-Q0Q51FveNIn9JjpwujqjENLTFIZqeTFIpeFwPGIpLfgOS3x6WSQciU0kaAucjEALw_wcB)
 
 ## 언어 모델 정보
-1. NLLB
+1. **NLLB**
     
     번역 속도는 빠름 용량자체가 작기 떄문, 자막으로 달기에 너무 ruff 한 느낌
     
@@ -25,7 +26,7 @@ Whisper Based Automatic Speech Recognition (ASR) and Translate using selectable 
     
     단점 : 번역 퀄리티
     
-2. Claude API
+2. **Claude API**
     
     번역 속도도 좋고, 번역 퀄리티도 좋음, 무료 버전으로 사용하기에 너무 제한적인 RPM
     
@@ -33,7 +34,7 @@ Whisper Based Automatic Speech Recognition (ASR) and Translate using selectable 
     
     단점 : 유료, 무료는 ( RPM 5 ) → 번역에 사용하기 어려움
     
-3. DeepL
+3. **DeepL**
     
     번역 속도 좋고, 번역 퀄리티 나쁘지 않음, 무료버전으로 500,000자 까지 번역가능
     
@@ -41,7 +42,7 @@ Whisper Based Automatic Speech Recognition (ASR) and Translate using selectable 
     
     단점 : 유료 ( 10분 정도 되는 길이 하나에 1.5만자 정도 ) 
     
-4. GoogleTrans ( UnOfficial )
+4. **GoogleTrans**
     
     번역 퀄리티 괜찮고 속도도 좋음 무료버전으로 사용할 수 있는 마지노선 
     
@@ -50,3 +51,13 @@ Whisper Based Automatic Speech Recognition (ASR) and Translate using selectable 
     장점: 무료
     
     단점: 1000 req / hours 경우의 IP block, 영상 길이가 길어지면 요청 가능 한도가 넘어 IP 블락이 될 수 있음
+
+5. **Gemini Pro**
+    
+    GoogleTrans가 무료버전으로 사용할 수 있는 마지노선 인 줄 알았으나
+    
+    Gemini는 파격적인 **60/RPM** 까지 무료 ( 5월쯤에 가격 정책 정해질 것으로 예상됨 )
+    
+    장점 : 무료 
+    
+    단점 : 없음
