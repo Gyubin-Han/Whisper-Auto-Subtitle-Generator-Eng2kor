@@ -6,7 +6,15 @@ from model import Translator_GoogleTrans, Translator_GoogleGemini, Translator_Go
 from time_utils import logging_time
 from localization import get_current_date
 import os
+import io
+from pydub import AudioSegment
 
+def export_mp3_from_mp4(video: bytes, save_path, title):
+    audio = AudioSegment.from_file(io.BytesIO(video), format="mp4")
+    audio.export(save_path+f"{title}.mp3", format="mp3")
+    
+    return save_path+f"{title}.mp3"
+    
 def format_timestamp(seconds: float, always_include_hours: bool = False, fractionalSeperator: str = '.'):
     assert seconds >= 0, "non-negative timestamp expected"
     milliseconds = round(seconds * 1000.0)

@@ -7,9 +7,10 @@ import os
 import whisper
 import ffmpeg
 
-from utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path
+from utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path, export_mp3_from_mp4
 from time_utils import logging_time
 from localization import get_current_date
+from validators import is_video_language_english
 
 loaded_model = whisper.load_model("medium") # 9sec    
 
@@ -59,7 +60,6 @@ def inference(link, loaded_model, save_path):
     lang = results["language"]
     return results["text"], vtt, srt, srt_ko, lang
 
-
 @logging_time
 def generate_subtitled_video(video, audio, transcript):
     video_file = ffmpeg.input(video)
@@ -78,6 +78,44 @@ def process(link: str):
     lang = results[3]
         
     return results, video, save_path, title
+
+
+# User Upload
+
+@logging_time
+def inference_upload(path, loaded_model, save_path):
+    options = dict(task="transcribe", language='en', best_of=5)
+    results = loaded_model.transcribe(path, **options)
+    vtt = getSubs(results["segments"], "vtt", None)
+    srt = getSubs(results["segments"], "srt", None)
+    srt_ko = getSubs(results["segments"], "srt_ko", None)
+    lang = results["language"]
+    return results["text"], vtt, srt, srt_ko, lang
+
+@logging_time
+def process_upload(video, title, limited_hash):
+    
+    save_path = make_path(limited_hash) # upload 일떄는 hash를 파일 폴더로
+    path = export_mp3_from_mp4(video, save_path, limited_hash) # filename -> limited_hash
+    
+    results = inference_upload(path, loaded_model, save_path)
+    lang = results[3]
+        
+    return results, save_path, title
+
+def background_process(video, file_name, limited_hash):
+    results, save_path, title = process_upload(video, file_name, limited_hash) 
+    
+    if not is_video_language_english(results[4]):
+        raise HTTPException(status_code=400, detail="Other language video cannot be translated yet.")
+        
+    with open(save_path+f"{limited_hash}_en.srt", "w+",encoding='utf8') as f: # filename -> limited_hash
+        f.writelines(results[2])
+        f.close()
+        
+    with open(save_path+f"{limited_hash}.srt", "w+",encoding='utf8') as f: # filename -> limited_hash
+        f.writelines(results[3])
+        f.close()
 
 @logging_time
 def main():
