@@ -12,3 +12,9 @@ application.properties
 *.srt
 *.vtt
 
+# env
+.env
+
+# Static Folders
+video/
+

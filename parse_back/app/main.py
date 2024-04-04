@@ -8,11 +8,14 @@ from pydantic import BaseModel
 
 from pytube import YouTube
 from pytube.exceptions import RegexMatchError
-from parse import process, populate_metadata, process_upload, background_process
-from utils import make_path
-from validators import is_valid_youtube, is_video_language_english
 
 import hashlib
+
+# Local Import
+from app.parse import process, populate_metadata, process_upload, background_process
+from app.utils import make_path
+from app.validators import is_valid_youtube, is_video_language_english
+
 
 app = FastAPI()
 
