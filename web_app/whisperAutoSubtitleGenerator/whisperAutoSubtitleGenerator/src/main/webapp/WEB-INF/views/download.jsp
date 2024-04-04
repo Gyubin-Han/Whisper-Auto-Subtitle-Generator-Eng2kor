@@ -15,7 +15,7 @@
         <cr:if test="${!empty param.url}">
         // 영상에 대한 처리
         $.ajax({
-          url:'http://182.231.5.187:8000/api/v1/youtube?link=${param.url}',   // 추후 변경 필요
+          url:'/api/v1/youtube?link=${param.url}',   // 추후 변경 필요
           type:'get',
           xhrFields:{
             responseType:'blob'
@@ -60,8 +60,8 @@
     function subtitleRequest(){
       $('#subtitleDownload').html('<strong>자막을 생성하고 있습니다... 잠시만 기다려주세요...</strong>');
       $.ajax({
-        <cr:if test="${!empty param.url}"> url: 'http://182.231.5.187:8000/api/v1/youtube/subtitle_download?link=${param.url}', </cr:if>
-        <cr:if test="${!empty param.limited_hash}"> url: 'http://182.231.5.187:8000/api/v1/upload/subtitle_download?limited_hash=${param.limited_hash}', </cr:if>   // 추후 변경 필요
+        <cr:if test="${!empty param.url}"> url: '/api/v1/youtube/subtitle_download?link=${param.url}', </cr:if>
+        <cr:if test="${!empty param.limited_hash}"> url: '/api/v1/upload/subtitle_download?limited_hash=${param.limited_hash}', </cr:if>   // 추후 변경 필요
         type: 'get',
         xhrFields: {
           responseType: 'blob'
