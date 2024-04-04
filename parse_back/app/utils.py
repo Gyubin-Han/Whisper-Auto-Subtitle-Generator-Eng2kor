@@ -2,12 +2,14 @@ import textwrap
 from typing import Iterator, TextIO
 # from translate import translate
 from tqdm import tqdm
-from model import Translator_GoogleTrans, Translator_GoogleGemini, Translator_GoogleGemini_Multi, Translator_GoogleGemini_Multi_Separate
-from time_utils import logging_time
-from localization import get_current_date
+
 import os
 import io
 from pydub import AudioSegment
+
+from app.model import Translator_GoogleTrans, Translator_GoogleGemini, Translator_GoogleGemini_Multi, Translator_GoogleGemini_Multi_Separate
+from app.time_utils import logging_time
+from app.localization import get_current_date
 
 def export_mp3_from_mp4(video: bytes, save_path, title):
     audio = AudioSegment.from_file(io.BytesIO(video), format="mp4")

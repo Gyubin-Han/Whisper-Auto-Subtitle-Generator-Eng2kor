@@ -7,10 +7,10 @@ import os
 import whisper
 import ffmpeg
 
-from utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path, export_mp3_from_mp4
-from time_utils import logging_time
-from localization import get_current_date
-from validators import is_video_language_english
+from app.utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path, export_mp3_from_mp4
+from app.time_utils import logging_time
+from app.localization import get_current_date
+from app.validators import is_video_language_english
 
 loaded_model = whisper.load_model("medium") # 9sec    
 

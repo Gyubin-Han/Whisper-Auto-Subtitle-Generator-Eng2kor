@@ -2,19 +2,19 @@ from transformers import pipeline
 from huggingface_hub import login
 
 from anthropic import Anthropic
-
 import deepl
-
 from googletrans import Translator
-
 import google.generativeai as genai
 
 import os
 import re
 
-from time_utils import logging_time
-
 from fastapi import HTTPException
+
+# environment
+from dotenv import load_dotenv
+PARENTS_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+load_dotenv(os.path.join(PARENTS_DIR, ".env"))
 
 # ! Need
 
