@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Service("main")
 public class MainService {
   private final String videoFilePath="./saveVideo/";
-  private final String API_SERVER_URL="http://182.231.5.187:8000/upload";
+  private final String API_SERVER_URL="http://182.231.5.187:8000/api/v1/upload";
 
   // 사용자 업로드 동영상 처리
   public String videoUpload(MultipartFile file){
