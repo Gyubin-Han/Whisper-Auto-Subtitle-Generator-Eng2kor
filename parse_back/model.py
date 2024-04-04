@@ -10,8 +10,11 @@ from googletrans import Translator
 import google.generativeai as genai
 
 import os
+import re
 
 from time_utils import logging_time
+
+from fastapi import HTTPException
 
 # ! Need
 
@@ -34,7 +37,6 @@ class Translator_NLLB:
         translation = model_output[0]["translation_text"]
 
         return translation
-    
     
 class Translator_Anthropic:
     def __init__(self):        
@@ -84,7 +86,6 @@ class Translator_Deepl:
     def translate(self, text: str):
         result = self.translator.translate_text(text, target_lang="KO")
         return result.text
-        
         
 class Translator_GoogleTrans:
     def __init__(self):
@@ -231,3 +232,145 @@ class Translator_GoogleGemini_Multi:
 
         # return translated text_list -> list
         return translated_text_list    
+    
+class Translator_GoogleGemini_Multi_Separate:
+    def __init__(self):
+        genai.configure(api_key=os.environ.get('GOOGLE_API_KEY'))
+        self.translator = genai.GenerativeModel('gemini-pro')
+
+    def translate_one(self, text):
+        prompt = f"""
+
+        # Rules:
+        - Since the translation will be used for subtitles, you must strictly follow the output format.
+        - Numbering must be strictly adhered to. If the response does not have the same number of lines as the numbering in the input, You must adjust the output to match the numbering format, even if it means breaking up sentences across multiple lines.
+        - Each line must have a text or contents.
+        
+        # Example:
+        - Input1: <paragraph>I'm at 44 seconds right now. That means we've got time for one final joke. <lb/>Because they're the ones who get it seen and get it shared. <lb/> You see, back in 2009, we all had these weird little things called attention spans. </paragraph>
+        - Output1: 지금은 44초입니다. 즉, 마지막 농담 하나 할 시간이 있습니다. <lb/> 본 사람들이 보고 공유하기 때문입니다. <lb/> 아시겠지만, 2009년에는 저희 모두가 주의력이라는 이상한 작은 것을 가지고 있었습니다.
+
+        - Input2: <paragraph>Sudan's main opposition group says heavily armed security forces raided its offices <lb/>and blocked a press conference on the eve of Sunday's protests against military rule. <lb/>The Sudanese Professional Association had called for a news conference to unveil plans for the rally,</paragraph>
+        - Output2: 수단의 주요 야권 단체는 중무장한 군대가 자신들의 사무실을 급습했다고 말했습니다. <lb/> 그리고 군부 통치에 반대하는 일요일 시위 전날 언론 기자회견을 막았습니다. <lb/> 수단 전문가 협회는 집회를 위한 계획을 발표하기 위해 기자회견을 소집했습니다.
+
+        - Input3: <paragraph>The sun was shining brightly in the clear blue sky.<lb/> Birds were chirping happily, welcoming the new day.<lb/> A gentle breeze carried the sweet scent of blooming flowers.</paragraph>
+        - Output3: 태양은 맑은 하늘에 환하게 빛나고 있었다.<lb/> 새들은 행복하게 지저귀며 새로운 하루를 맞이했다.<lb/> 부드러운 바람이 피어난 꽃들의 향기를 실어 나르고 있었다.
+        
+        # Original Paragraph: 
+        <paragraph>{text}</paragraph>
+        
+        # Your translation:"""
+        
+        response = self.translator.generate_content(
+                        prompt,
+                        safety_settings={
+                            "HARM_CATEGORY_HARASSMENT": "block_none",
+                            "HARM_CATEGORY_SEXUALLY_EXPLICIT": "block_none",
+                            "HARM_CATEGORY_HATE_SPEECH": "block_none",
+                            "HARM_CATEGORY_DANGEROUS_CONTENT": "block_none",
+                        },
+                        generation_config=genai.types.GenerationConfig(
+                            candidate_count=1,
+                            temperature=0.4,
+                        ),
+                    )
+        
+        try:
+            translated_text_list = response.text.split("<lb/>")
+        except:
+            raise HTTPException(status_code=500, detail="Response was blocked! Please Re-try")
+            
+        translated_text_list = self.remove_strips(translated_text_list)        
+        return translated_text_list[0]
+        
+    def translate(self, indice, text_list: list, source_lang="English", target_lang="Korean"):
+        result = ""
+        for idx, text in enumerate(text_list, start=indice+1):
+            result += f"{idx}. {text}<lb/>"
+            
+        prompt = f"""
+
+        # Rules:
+        - Since the translation will be used for subtitles, you must strictly follow the output format.
+        - Numbering must be strictly adhered to. If the response does not have the same number of lines as the numbering in the input, You must adjust the output to match the numbering format, even if it means breaking up sentences across multiple lines.
+        - Each line must have a text or contents.
+        
+        # Example:
+        - Input1: <paragraph>I'm at 44 seconds right now. That means we've got time for one final joke. <lb/>Because they're the ones who get it seen and get it shared. <lb/> You see, back in 2009, we all had these weird little things called attention spans. </paragraph>
+        - Output1: 지금은 44초입니다. 즉, 마지막 농담 하나 할 시간이 있습니다. <lb/> 본 사람들이 보고 공유하기 때문입니다. <lb/> 아시겠지만, 2009년에는 저희 모두가 주의력이라는 이상한 작은 것을 가지고 있었습니다.
+
+        - Input2: <paragraph>Sudan's main opposition group says heavily armed security forces raided its offices <lb/>and blocked a press conference on the eve of Sunday's protests against military rule. <lb/>The Sudanese Professional Association had called for a news conference to unveil plans for the rally,</paragraph>
+        - Output2: 수단의 주요 야권 단체는 중무장한 군대가 자신들의 사무실을 급습했다고 말했습니다. <lb/> 그리고 군부 통치에 반대하는 일요일 시위 전날 언론 기자회견을 막았습니다. <lb/> 수단 전문가 협회는 집회를 위한 계획을 발표하기 위해 기자회견을 소집했습니다.
+
+        - Input3: <paragraph>The sun was shining brightly in the clear blue sky.<lb/> Birds were chirping happily, welcoming the new day.<lb/> A gentle breeze carried the sweet scent of blooming flowers.</paragraph>
+        - Output3: 태양은 맑은 하늘에 환하게 빛나고 있었다.<lb/> 새들은 행복하게 지저귀며 새로운 하루를 맞이했다.<lb/> 부드러운 바람이 피어난 꽃들의 향기를 실어 나르고 있었다.
+        
+        # Original Paragraph: 
+        <paragraph>{result}</paragraph>
+        
+        # Your translation:"""
+
+        # Generate the text response using the model
+        
+        # 최대 5번까지 재요청
+        count = 0
+        while count < 5: 
+            
+            response = self.translator.generate_content(
+                prompt,
+                safety_settings={
+                    "HARM_CATEGORY_HARASSMENT": "block_none",
+                    "HARM_CATEGORY_SEXUALLY_EXPLICIT": "block_none",
+                    "HARM_CATEGORY_HATE_SPEECH": "block_none",
+                    "HARM_CATEGORY_DANGEROUS_CONTENT": "block_none",
+                },
+                generation_config=genai.types.GenerationConfig(
+                    candidate_count=1,
+                    temperature=0.4,
+                ),
+            )
+            
+            try:
+                translated_text_list = response.text.split("<lb/>")
+            except:
+                raise HTTPException(status_code=500, detail="Response was blocked! Please Re-try")
+                
+            translated_text_list = self.remove_strips(translated_text_list)
+            
+            count += 1
+            if self.vaild_response(translated_text_list, len(text_list)):
+                print("예외처리 X")
+                break
+            
+        # 5번까지 요청했는데 안됀다 그러면 한줄한줄 번역해야함
+        else:
+            print("예외처리 O")
+            translated_text_list = []
+            
+            for text in text_list:
+                translated_text_list.append(self.translate_one(text))
+        
+        
+        # return translated text_list -> list
+        return translated_text_list   
+    
+    # 응답이 자막에 사용할 수 있는지 아닌지
+    def vaild_response(self, translated_text_list, indice):
+        
+        # Get the translated text from the response
+        
+        if len(translated_text_list) > indice:
+            return False
+        elif len(translated_text_list) == indice:
+            return True
+        elif len(translated_text_list) < indice:
+            return False
+        
+    def remove_strips(self, translated_text_list):
+        
+        # 각 문장의 \n과 넘버링을 제거하고
+        # 제거한 리스트에서 공백 제거
+        
+        cleaned_list = list(filter(str.strip, [re.sub(r'^\d+\.\s*', '', item.replace('\n', '')) for item in translated_text_list]))
+        
+        return cleaned_list

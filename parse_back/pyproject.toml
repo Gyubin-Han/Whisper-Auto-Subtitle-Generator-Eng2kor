@@ -3,7 +3,7 @@ name = "whisper-auto-subtitle-generator"
 version = "0.1.0"
 description = ""
 authors = ["Serotina <wlsdn2749@gmail.com>"]
-readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -21,6 +21,8 @@ uvicorn = {extras = ["standard"], version = "^0.28.0"}
 fastapi = "^0.110.0"
 python-multipart = "^0.0.9"
 google-generativeai = "^0.4.1"
+pytz = "^2024.1"
+pydub = "^0.25.1"
 
 
 [tool.poetry.group.dev.dependencies]
