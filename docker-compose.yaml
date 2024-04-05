@@ -17,10 +17,12 @@ services:
       - app-network
   web_app:
     build:
-      context: ./web_app/whisperAutoSubtitleGenerator/whisperAutoSubtitleGenerator
-      dockerfile: dockerfile
+      context: ./web_app
+      dockerfile: Dockerfile
     ports:
       - "10020:10020"
+    networks:
+      - app-network
     
   nginx:
     image: nginx:latest
