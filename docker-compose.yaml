@@ -15,6 +15,13 @@ services:
     working_dir: /code
     networks:
       - app-network
+  web_app:
+    build:
+      context: ./web_app/whisperAutoSubtitleGenerator/whisperAutoSubtitleGenerator
+      dockerfile: dockerfile
+    ports:
+      - "10020:10020"
+    
   nginx:
     image: nginx:latest
     ports:
