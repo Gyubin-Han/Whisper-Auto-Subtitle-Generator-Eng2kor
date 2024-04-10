@@ -16,7 +16,6 @@ from app.parse import process, populate_metadata, process_upload, background_pro
 from app.utils import make_path
 from app.validators import is_valid_youtube, is_video_language_english
 
-
 app = FastAPI()
 
 origins = [

@@ -12,7 +12,8 @@ from app.time_utils import logging_time
 from app.localization import get_current_date
 from app.validators import is_video_language_english
 
-loaded_model = whisper.load_model("medium") # 9sec    
+model_path = "medium.pt"
+loaded_model = whisper.load_model(model_path) # 9sec    
 
 @logging_time
 def populate_metadata(link):
