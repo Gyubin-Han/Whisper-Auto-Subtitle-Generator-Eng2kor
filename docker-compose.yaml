@@ -1,6 +1,28 @@
 version: '3'
 
 services:
+  model_back:
+    container_name: service_model_back
+    build:
+      context: ./model_back # Directory built image
+      dockerfile: Dockerfile
+    ports:
+      - "8200:8200" # host 8000 -> container 8000
+    volumes:
+      - ./model_back/app:/code/app # app -> container -> /code/app automatic mapping (auto reload)
+    environment:
+      - POETRY_VIRTUALENVS_CREATE=false # Poetry doesn't make virtualenv...
+    command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8200", "--root-path", "/model/whisper"]
+    working_dir: /code
+    networks:
+      - app-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]  
   parse_back:
     container_name: service_parse_back
     build:
@@ -12,17 +34,10 @@ services:
       - ./parse_back/app:/code/app # app -> container -> /code/app automatic mapping (auto reload)
     environment:
       - POETRY_VIRTUALENVS_CREATE=false # Poetry doesn't make virtualenv...
-    command: ["poetry", "run", "gunicorn", "app.main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000"]
+    command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api/v1"]
     working_dir: /code
     networks:
       - app-network
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]  
   web_app:
     container_name: service_web_app
     build:
@@ -32,7 +47,6 @@ services:
       - "10020:10020"
     networks:
       - app-network
-
     
   nginx:
     image: nginx:latest

@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "model-back"
+version = "0.1.0"
+description = ""
+authors = ["Serotina <wlsdn2749@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+uvicorn = {extras = ["standard"], version = "^0.29.0"}
+asyncio = "^3.4.3"
+fastapi = "^0.110.1"
+openai-whisper = {git = "https://github.com/openai/whisper.git"}
+pytube = "^15.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -25,6 +25,7 @@ pytz = "^2024.1"
 pydub = "^0.25.1"
 python-dotenv = "^1.0.1"
 gunicorn = "^21.2.0"
+aiofiles = "^23.2.1"
 
 
 [tool.poetry.group.dev.dependencies]

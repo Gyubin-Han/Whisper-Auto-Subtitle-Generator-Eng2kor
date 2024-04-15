@@ -4,19 +4,17 @@ from fastapi import HTTPException
 from typing import Iterator
 from io import StringIO
 import os
-import whisper
 import ffmpeg
 
 from app.utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path, export_mp3_from_mp4
 from app.time_utils import logging_time
 from app.localization import get_current_date
-from app.validators import is_video_language_english
+from app.validators import is_video_language_english    
 
-model_path = "medium.pt"
-loaded_model = whisper.load_model(model_path) # 9sec    
+import requests
 
 @logging_time
-def populate_metadata(link):
+async def populate_metadata(link):
     yt = YouTube(link)
     author = yt.author
     title = yt.title
@@ -34,15 +32,16 @@ def download_video(link, save_path):
 
     return video
 
-def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
+async def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
     segmentStream = StringIO()
 
     if format == 'vtt':
-        write_vtt(segments, file=segmentStream, maxLineWidth=maxLineWidth)
+        # await write_vtt(segments, file=segmentStream, maxLineWidth=maxLineWidth)
+        pass
     elif format == 'srt':
-        write_srt(segments, file=segmentStream, maxLineWidth=maxLineWidth)
+        await write_srt(segments, file=segmentStream, maxLineWidth=maxLineWidth)
     elif format == 'srt_ko':
-        write_srt_ko(segments, file=segmentStream, maxLineWidth=maxLineWidth)
+        await write_srt_ko(segments, file=segmentStream, maxLineWidth=maxLineWidth)
     else:
         raise Exception("Unknown format " + format)
 
@@ -50,16 +49,26 @@ def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
     return segmentStream.read()
 
 @logging_time
-def inference(link, loaded_model, save_path):
-    yt = YouTube(link)
-    path = yt.streams.filter(only_audio=True)[0].download(filename=save_path+"audio.mp3")
-    options = dict(task="transcribe", best_of=5)
-    results = loaded_model.transcribe(path, **options)
-    vtt = getSubs(results["segments"], "vtt", None)
-    srt = getSubs(results["segments"], "srt", None)
-    srt_ko = getSubs(results["segments"], "srt_ko", None)
-    lang = results["language"]
-    return results["text"], vtt, srt, srt_ko, lang
+async def inference(link, save_path):
+    
+    results = []
+    url = "https://tools.gyu.be/model/whisper/transcribe"
+    data = {"link": link, "save_path": save_path}
+    response = requests.post(url, json=data)
+
+    if response.status_code == 200:
+        results = response.json()
+        print("응답 OK")
+        vtt = await getSubs(results["segments"], "vtt", None)
+        srt = await getSubs(results["segments"], "srt", None)
+        srt_ko = await getSubs(results["segments"], "srt_ko", None)
+        lang = results["language"]
+        return results["text"], vtt, srt, srt_ko, lang
+    else:
+        print(f"요청 실패: {response.status_code}")
+        raise HTTPException(422)
+    # results = await asyncio.to_thread(loaded_model.transcribe, path, **options)
+   
 
 @logging_time
 def generate_subtitled_video(video, audio, transcript):
@@ -70,16 +79,15 @@ def generate_subtitled_video(video, audio, transcript):
     return video_with_subs     
 
 @logging_time
-def process(link: str):
+async def process(link: str):
     
-    author, title, description, thumbnail, length, views = populate_metadata(link)
+    author, title, description, thumbnail, length, views = await populate_metadata(link)
     save_path = make_path(title)
-    results = inference(link, loaded_model, save_path)
+    results = await inference(link, save_path)
     video = download_video(link, save_path)
     lang = results[3]
         
     return results, video, save_path, title
-
 
 # User Upload
 

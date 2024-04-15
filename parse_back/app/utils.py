@@ -1,10 +1,10 @@
 import textwrap
 from typing import Iterator, TextIO
-# from translate import translate
 from tqdm import tqdm
 
 import os
 import io
+import asyncio
 from pydub import AudioSegment
 
 from app.model import Translator_GoogleTrans, Translator_GoogleGemini, Translator_GoogleGemini_Multi, Translator_GoogleGemini_Multi_Separate
@@ -50,7 +50,7 @@ def write_vtt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
             flush=True,
         )
         
-def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
+async def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
     """
     Write a transcript to a file in SRT format.
     Example usage:
@@ -66,7 +66,8 @@ def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
         text = processText(segment['text'].strip(), maxLineWidth).replace('-->', '->')
         text = make_full_stop(text)
         # write srt lines
-        print(
+        await asyncio.to_thread(
+            print,
             f"{i}\n"
             f"{format_timestamp(segment['start'], always_include_hours=True, fractionalSeperator=',')} --> "
             f"{format_timestamp(segment['end'], always_include_hours=True, fractionalSeperator=',')}\n"
@@ -77,7 +78,7 @@ def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
         
 # 10 increment씩 증가하며 분할 요청        
 @logging_time
-def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
+async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
 
     translator = Translator_GoogleGemini_Multi_Separate()
     
@@ -87,12 +88,12 @@ def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
     while indice <= len(transcript):
 
         english_list = get_transcript_list(transcript[indice:indice+increment])
-        translated_text = translator.translate(indice, english_list) 
+        translated_text = await translator.translate(indice, english_list)
         translated_text = [item.replace('<paragraph>', '').replace('</paragraph>', '') for item in translated_text]
         try:
             for i, segment in enumerate(transcript[indice:indice+increment], start=indice+1):
-
-                print(
+                await asyncio.to_thread(
+                    print,
                     f"{i}\n"
                     f"{format_timestamp(segment['start'], always_include_hours=True, fractionalSeperator=',')} --> "
                     f"{format_timestamp(segment['end'], always_include_hours=True, fractionalSeperator=',')}\n"

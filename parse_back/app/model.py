@@ -8,6 +8,7 @@ import google.generativeai as genai
 
 import os
 import re
+import asyncio
 
 from fastapi import HTTPException
 
@@ -238,7 +239,7 @@ class Translator_GoogleGemini_Multi_Separate:
         genai.configure(api_key=os.environ.get('GOOGLE_API_KEY'))
         self.translator = genai.GenerativeModel('gemini-pro')
 
-    def translate_one(self, text):
+    async def translate_one(self, text):
         prompt = f"""
 
         # Rules:
@@ -261,19 +262,20 @@ class Translator_GoogleGemini_Multi_Separate:
         
         # Your translation:"""
         
-        response = self.translator.generate_content(
-                        prompt,
-                        safety_settings={
-                            "HARM_CATEGORY_HARASSMENT": "block_none",
-                            "HARM_CATEGORY_SEXUALLY_EXPLICIT": "block_none",
-                            "HARM_CATEGORY_HATE_SPEECH": "block_none",
-                            "HARM_CATEGORY_DANGEROUS_CONTENT": "block_none",
-                        },
-                        generation_config=genai.types.GenerationConfig(
-                            candidate_count=1,
-                            temperature=0.4,
-                        ),
-                    )
+        response = await asyncio.to_thread(
+            self.translator.generate_content,
+            prompt,
+            safety_settings={
+                "HARM_CATEGORY_HARASSMENT": "block_none",
+                "HARM_CATEGORY_SEXUALLY_EXPLICIT": "block_none",
+                "HARM_CATEGORY_HATE_SPEECH": "block_none",
+                "HARM_CATEGORY_DANGEROUS_CONTENT": "block_none",
+            },
+            generation_config=genai.types.GenerationConfig(
+                candidate_count=1,
+                temperature=0.4,
+            ),
+        )
         
         try:
             translated_text_list = response.text.split("<lb/>")
@@ -283,7 +285,7 @@ class Translator_GoogleGemini_Multi_Separate:
         translated_text_list = self.remove_strips(translated_text_list)        
         return translated_text_list[0]
         
-    def translate(self, indice, text_list: list, source_lang="English", target_lang="Korean"):
+    async def translate(self, indice, text_list: list, source_lang="English", target_lang="Korean"):
         result = ""
         for idx, text in enumerate(text_list, start=indice+1):
             result += f"{idx}. {text}<lb/>"
@@ -316,7 +318,8 @@ class Translator_GoogleGemini_Multi_Separate:
         count = 0
         while count < 5: 
             
-            response = self.translator.generate_content(
+            response = await asyncio.to_thread(
+                self.translator.generate_content,
                 prompt,
                 safety_settings={
                     "HARM_CATEGORY_HARASSMENT": "block_none",
@@ -348,7 +351,7 @@ class Translator_GoogleGemini_Multi_Separate:
             translated_text_list = []
             
             for text in text_list:
-                translated_text_list.append(self.translate_one(text))
+                translated_text_list.append(await self.translate_one(text))
         
         
         # return translated text_list -> list
