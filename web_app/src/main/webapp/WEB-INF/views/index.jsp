@@ -138,7 +138,7 @@
 
             $('#'+number+' .translateInfoVideo').html('동영상을 다운로드하였습니다.\ ').append(videoDownloadButton)
 
-            downloadSubtitle(id,true,url.value);
+            downloadSubtitle(number,true,url.value);
           },
           error:function(request,status,e){
             console.error(status);

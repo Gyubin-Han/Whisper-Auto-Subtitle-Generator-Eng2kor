@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>be.gyu</groupId>
 	<artifactId>whisperAutoSubtitleGenerator</artifactId>
-	<version>0.0.3</version>
+	<version>0.0.4</version>
 	<packaging>war</packaging>
 	<name>whisperAutoSubtitleGenerator</name>
 	<description>Applications that automatically create subtitles</description>
