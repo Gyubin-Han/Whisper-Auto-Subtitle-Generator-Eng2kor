@@ -83,7 +83,29 @@
         textarea.style.height = 'auto';
         textarea.style.height = textarea.scrollHeight + 'px';
       }
+      
+      function updateProgressbar(id,value){
+        $('#'+id+' progress-bar').attr('aria-valuenow',value).css('width',value+'%').text(value+'%');
+      }
 
+      function statusUrl(id,url){
+        $.ajax({
+          url: '/api/v1/status/' + url.value(),
+          type: 'get',
+          success: function (response) {
+            console.log(response);
+
+            updateProgressbar(id,response.value);
+            let timeoutId=setTimeout(statusUrl,1000,id,url);
+            if (response.value >= 100) {
+              clearTimeout(timeoutId);
+            }
+          },
+          error: function (request, status, e) {
+            console.error(e);
+          }
+        });
+      }
       // URL 번역 시작
       function submitUrl(){
         const url=$('textarea[name="url"]')[0];
@@ -106,6 +128,12 @@
               .append($('<tr>')
                 .append($('<th>').text('원본'))
                 .append($('<td>').text(url.value)))
+              .append($('<tr>')
+                .append($('<th>').text('진행도'))
+                .append($('<td>').append($('<div class="progress">)').append(
+                  $('<div class="progress-bar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">')
+                )))
+              )
               .append($('<tr>')
                 .append($('<th>').text('동영상'))
                 .append($('<td>').addClass('translateInfoVideo').text('동영상을 다운로드하고 있습니다.')))
@@ -146,6 +174,8 @@
             $('#'+number+' .translateInfoVideo').html('<i>동영상을 다운로드하는 중에 오류가 발생했습니다...</i>');
           }
         });
+
+        statusUrl(number,url.value);
       }
 
       // 영상 파일 번역 시작
@@ -167,12 +197,17 @@
               .append($('<tr>')
                 .append($('<th>').text('원본'))
                 .append($('<td>').text('직접 업로드')))
+              /*.append($('<tr>')
+                .append($('<th>').text('진행도'))
+                .addend($('<td>').append($('<div class="progress">)').append(
+                    $('<div class="progress-bar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">')
+                  )))*/
               .append($('<tr>')
                 .append($('<th>').text('동영상'))
                 .append($('<td>').addClass('translateInfoVideo').text('직접 업로드한 동영상은 다운로드 기능이 제공되지 않습니다.')))
               .append($('<tr>')
                 .append($('<th>').text('자막'))
-                .append($('<td>').addClass('translateInfoSubtitle').text('자막을 생성하고 있습니다.')))))
+                .append($('<td>').addClass('translateInfoSubtitle').text('자막을 생성하고 있습니다.')))));
         article.prepend(addTranslate);
         let file = $('#videoFile')[0].files[0];
 
