@@ -1,7 +1,7 @@
 from typing import Union
 import uvicorn
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 import asyncio
@@ -9,6 +9,7 @@ import whisper
 import os 
 
 from pytube import YouTube
+from pytube.exceptions import RegexMatchError, AgeRestrictedError
 from urllib.parse import unquote
 
 # torch.multiprocessing.set_start_method('spawn')
@@ -53,11 +54,20 @@ async def model_transcribe(data: dict):
     save_path = os.getcwd() + '/' + '/'.join(save_path.split('/')[1:])
     make_dirs(save_path)
     
-    yt = YouTube(link)
-    path = yt.streams.filter(only_audio=True)[0].download(filename=save_path+"audio.mp3")
+    try:
+        yt = YouTube(link)
+        path = yt.streams.filter(only_audio=True)[0].download(filename=save_path+"audio.mp3")
+        
+    except AgeRestrictedError as e:
+        raise HTTPException(status_code=400, detail="연령 제한 혹은 지원되지 않는 유튜브 영상 입니다.")
+    
     options = dict(task="transcribe", best_of=5)
 
     results = await asyncio.to_thread(loaded_model.transcribe, path, **options)
+    # results = loaded_model.transcribe(path, **options)
+    
+    if results["language"] != 'en':
+        raise HTTPException(status_code=400, detail=f'현재 영어 영상 번역 기능만 지원합니다. 탐지된 언어 {results["language"]}')
     return results
 
     

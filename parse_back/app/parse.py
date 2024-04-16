@@ -3,10 +3,12 @@ from pytube import YouTube
 from fastapi import HTTPException
 from typing import Iterator
 from io import StringIO
+
 import os
 import ffmpeg
+import hashlib 
 
-from app.utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path, export_mp3_from_mp4
+from app.utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path, export_mp3_from_mp4, redis_set_value, redis_get_value
 from app.time_utils import logging_time
 from app.localization import get_current_date
 from app.validators import is_video_language_english    
@@ -32,7 +34,7 @@ def download_video(link, save_path):
 
     return video
 
-async def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> str:
+async def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int, link) -> str:
     segmentStream = StringIO()
 
     if format == 'vtt':
@@ -41,7 +43,7 @@ async def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int) -> s
     elif format == 'srt':
         await write_srt(segments, file=segmentStream, maxLineWidth=maxLineWidth)
     elif format == 'srt_ko':
-        await write_srt_ko(segments, file=segmentStream, maxLineWidth=maxLineWidth)
+        await write_srt_ko(segments, file=segmentStream, maxLineWidth=maxLineWidth, link=link)
     else:
         raise Exception("Unknown format " + format)
 
@@ -58,15 +60,17 @@ async def inference(link, save_path):
 
     if response.status_code == 200:
         results = response.json()
+        redis_set_value(link, 10) # 10% 완료
         print("응답 OK")
-        vtt = await getSubs(results["segments"], "vtt", None)
-        srt = await getSubs(results["segments"], "srt", None)
-        srt_ko = await getSubs(results["segments"], "srt_ko", None)
+        vtt = await getSubs(results["segments"], "vtt", None, link)
+        srt = await getSubs(results["segments"], "srt", None, link)
+        srt_ko = await getSubs(results["segments"], "srt_ko", None, link)
         lang = results["language"]
         return results["text"], vtt, srt, srt_ko, lang
     else:
         print(f"요청 실패: {response.status_code}")
-        raise HTTPException(422)
+        error_detail = response.json().get("detail")
+        raise HTTPException(status_code=response.status_code, detail=error_detail)
     # results = await asyncio.to_thread(loaded_model.transcribe, path, **options)
    
 
@@ -85,14 +89,13 @@ async def process(link: str):
     save_path = make_path(title)
     results = await inference(link, save_path)
     video = download_video(link, save_path)
-    lang = results[3]
         
     return results, video, save_path, title
 
 # User Upload
 
 @logging_time
-def inference_upload(path, loaded_model, save_path):
+def inference_upload(path, save_path):
     options = dict(task="transcribe", language='en', best_of=5)
     results = loaded_model.transcribe(path, **options)
     vtt = getSubs(results["segments"], "vtt", None)
@@ -107,7 +110,7 @@ def process_upload(video, title, limited_hash):
     save_path = make_path(limited_hash) # upload 일떄는 hash를 파일 폴더로
     path = export_mp3_from_mp4(video, save_path, limited_hash) # filename -> limited_hash
     
-    results = inference_upload(path, loaded_model, save_path)
+    results = inference_upload(path, save_path)
     lang = results[3]
         
     return results, save_path, title

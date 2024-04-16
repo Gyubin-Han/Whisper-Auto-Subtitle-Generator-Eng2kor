@@ -5,11 +5,14 @@ from tqdm import tqdm
 import os
 import io
 import asyncio
+import redis
 from pydub import AudioSegment
 
 from app.model import Translator_GoogleTrans, Translator_GoogleGemini, Translator_GoogleGemini_Multi, Translator_GoogleGemini_Multi_Separate
 from app.time_utils import logging_time
 from app.localization import get_current_date
+
+redis_client = redis.Redis(host='redis', port=6379)
 
 def export_mp3_from_mp4(video: bytes, save_path, title):
     audio = AudioSegment.from_file(io.BytesIO(video), format="mp4")
@@ -78,7 +81,7 @@ async def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None)
         
 # 10 increment씩 증가하며 분할 요청        
 @logging_time
-async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
+async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None, link=None):
 
     translator = Translator_GoogleGemini_Multi_Separate()
     
@@ -105,6 +108,9 @@ async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=No
             pass        
             
         indice += increment
+        redis_value = min(10 + int((indice / len(transcript)) * 90), 100)
+        
+        redis_set_value(link, redis_value)
         
 def processText(text: str, maxLineWidth=None):
     if (maxLineWidth is None or maxLineWidth < 0):
@@ -159,3 +165,13 @@ def make_path(title: str) -> str:
     save_path = f'{root_path}/video/{current_date}/{title}/'
     make_dirs(path=save_path)
     return save_path
+
+def redis_get_value(key: str):
+    value = redis_client.get(key)
+    if value is None:
+        return {"message": f"Key '{key}' not found"}
+    return {"value": value.decode()}
+
+def redis_set_value(key: str, value: str, ex=300):
+    redis_client.set(key, value, ex=ex)
+    return {"message": f"Key '{key}' set to '{value}'"}

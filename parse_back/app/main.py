@@ -6,16 +6,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 import hashlib
 import aiofiles
+import random
 
 # Local Import
 from app.parse import process, populate_metadata, process_upload, background_process
-from app.utils import make_path
+from app.utils import make_path, redis_get_value
 from app.validators import is_valid_youtube, is_video_language_english
-
-# torch.multiprocessing.set_start_method('spawn')
-
-# model_path = "medium.pt"
-# loaded_model = whisper.load_model(model_path)
 
 app = FastAPI()
 
@@ -40,12 +36,9 @@ def read_root():
 async def get_yt_link(link: str):
     
     if not is_valid_youtube(link):
-        raise HTTPException(status_code=400, detail="Invalid YouTube URL")
+        raise HTTPException(status_code=400, detail="적절한 유튜브 URL을 넣어주세요")
 
     results, video, save_path, title = await process(link)
-    
-    if not is_video_language_english(results[4]):
-        raise HTTPException(status_code=400, detail="Other language video cannot be translated yet.")
         
     async with aiofiles.open(save_path+f"{title}_en.srt", "w+",encoding='utf8') as f:
         await f.writelines(results[2])
@@ -102,3 +95,11 @@ async def get_custom_video_subtitle_download(limited_hash: str):
     
 if __name__ == "__main__":
     uvicorn.run(app, host='0.0.0.0', port=8000)
+    
+@app.get("/status")
+async def get_random_number():
+    return {"number": random.randint(1, 100)}
+
+@app.get("/status/{key}")
+def get_value(key: str):
+    return redis_get_value(key)

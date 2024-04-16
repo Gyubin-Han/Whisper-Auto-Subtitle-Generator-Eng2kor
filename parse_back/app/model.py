@@ -347,12 +347,12 @@ class Translator_GoogleGemini_Multi_Separate:
             
         # 5번까지 요청했는데 안됀다 그러면 한줄한줄 번역해야함
         else:
-            print("예외처리 O")
+
             translated_text_list = []
-            
-            for text in text_list:
+            print("예외처리 O")    
+            for text_idx, text in enumerate(text_list):
+                print(text_idx, ": 진행중")
                 translated_text_list.append(await self.translate_one(text))
-        
         
         # return translated text_list -> list
         return translated_text_list   
