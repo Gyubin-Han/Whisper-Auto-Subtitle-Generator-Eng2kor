@@ -12,6 +12,8 @@ from app.model import Translator_GoogleTrans, Translator_GoogleGemini, Translato
 from app.time_utils import logging_time
 from app.localization import get_current_date
 
+from urllib.parse import unquote
+
 redis_client = redis.Redis(host='redis', port=6379)
 
 def export_mp3_from_mp4(video: bytes, save_path, title):
