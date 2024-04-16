@@ -85,7 +85,7 @@
       }
       
       function updateProgressbar(id,value){
-        $('#'+id+' progress-bar').attr('aria-valuenow',value).css('width',value+'%').text(value+'%');
+        $('#'+id+' .progress-bar').attr('aria-valuenow',value).css('width',value+'%').text(value+'%');
       }
 
       function statusUrl(id,url){
