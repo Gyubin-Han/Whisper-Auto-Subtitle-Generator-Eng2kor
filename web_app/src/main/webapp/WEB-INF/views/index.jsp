@@ -90,7 +90,7 @@
 
       function statusUrl(id,url){
         $.ajax({
-          url: '/api/v1/status/' + url.value(),
+          url: '/api/v1/status/' + url,
           type: 'get',
           success: function (response) {
             console.log(response);
