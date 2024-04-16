@@ -198,7 +198,7 @@
             }
             console.log(responseJson);
 
-            downloadSubtitle(number,false,responseJson.limited_hash);
+            downloadSubtitle(number,false,responseJson.hash);
           },
           error:function(request,status,e){
             log.error(status);
