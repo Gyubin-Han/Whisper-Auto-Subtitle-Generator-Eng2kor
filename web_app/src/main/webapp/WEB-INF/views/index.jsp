@@ -96,7 +96,7 @@
             console.log(response);
 
             updateProgressbar(id,response.value);
-            let timeoutId=setTimeout(statusUrl,1000,id,url);
+            let timeoutId=setTimeout(statusUrl,3000,id,url);
             if (response.value >= 100) {
               clearTimeout(timeoutId);
             }
