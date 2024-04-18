@@ -7,6 +7,7 @@ from io import StringIO
 import os
 import ffmpeg
 import hashlib 
+import asyncio
 
 from app.utils import write_srt, write_vtt, write_srt_ko, make_dirs, make_path, export_mp3_from_mp4, redis_set_value, redis_get_value
 from app.time_utils import logging_time
@@ -27,10 +28,14 @@ async def populate_metadata(link):
     return author, title, description, thumbnail, length, views
 
 @logging_time
-def download_video(link, save_path):
+async def download_video(link, save_path):
 
+    async def update_redis(percentage):
+        await asyncio.to_thread(redis_set_value, link, percentage)
+        
     yt = YouTube(link)
     video = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first().download(output_path=save_path)
+    asyncio.create_task(update_redis(100))
 
     return video
 
@@ -53,15 +58,18 @@ async def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int, link
 @logging_time
 async def inference(link, save_path):
     
+    async def update_redis(percentage):
+        await asyncio.to_thread(redis_set_value, link, percentage)
+        
     results = []
-    redis_set_value(link, 5) # 5% 완료
+    asyncio.create_task(update_redis(5)) # 5% 완료 not working well..
     url = "https://tools.gyu.be/model/whisper/transcribe"
     data = {"link": link, "save_path": save_path}
     response = requests.post(url, json=data)
 
     if response.status_code == 200:
         results = response.json()
-        redis_set_value(link, 10) # 10% 완료
+        asyncio.create_task(update_redis(10)) # 10% 완료
         print("응답 OK")
         vtt = await getSubs(results["segments"], "vtt", None, link)
         srt = await getSubs(results["segments"], "srt", None, link)
@@ -71,6 +79,7 @@ async def inference(link, save_path):
     else:
         print(f"요청 실패: {response.status_code}")
         error_detail = response.json().get("detail")
+        update_redis(-1)
         raise HTTPException(status_code=response.status_code, detail=error_detail)
     # results = await asyncio.to_thread(loaded_model.transcribe, path, **options)
    
@@ -89,7 +98,7 @@ async def process(link: str):
     author, title, description, thumbnail, length, views = await populate_metadata(link)
     save_path = make_path(title)
     results = await inference(link, save_path)
-    video = download_video(link, save_path)
+    video = await download_video(link, save_path)
         
     return results, video, save_path, title
 

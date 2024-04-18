@@ -85,6 +85,9 @@ async def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None)
 @logging_time
 async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None, link=None):
 
+    async def update_redis(percentage):
+        await asyncio.to_thread(redis_set_value, link, percentage)
+        
     translator = Translator_GoogleGemini_Multi_Separate()
     
     indice = 0
@@ -110,9 +113,9 @@ async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=No
             pass        
             
         indice += increment
-        redis_value = min(10 + int((indice / len(transcript)) * 90), 100)
+        redis_value = min(10 + int((indice / len(transcript)) * 80), 90)
         
-        redis_set_value(link, redis_value)
+        asyncio.create_task(update_redis(redis_value))
         
 def processText(text: str, maxLineWidth=None):
     if (maxLineWidth is None or maxLineWidth < 0):
@@ -176,4 +179,5 @@ def redis_get_value(key: str):
 
 def redis_set_value(key: str, value: str, ex=300):
     redis_client.set(key, value, ex=ex)
+    print(f"message : Key {key} set to {value}")
     return {"message": f"Key '{key}' set to '{value}'"}

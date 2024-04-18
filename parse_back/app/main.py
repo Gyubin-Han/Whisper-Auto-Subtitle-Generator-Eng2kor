@@ -7,10 +7,11 @@ from fastapi.middleware.cors import CORSMiddleware
 import hashlib
 import aiofiles
 import random
+import asyncio
 
 # Local Import
 from app.parse import process, populate_metadata, process_upload, background_process
-from app.utils import make_path, redis_get_value
+from app.utils import make_path, redis_get_value, redis_set_value
 from app.validators import is_valid_youtube, is_video_language_english
 
 app = FastAPI()
@@ -35,7 +36,11 @@ def read_root():
 @app.get("/youtube", response_class=FileResponse)
 async def get_yt_link(link: str):
     
+    async def update_redis(percentage):
+        await asyncio.to_thread(redis_set_value, link, percentage)
+        
     if not is_valid_youtube(link):
+        asyncio.create_task(update_redis(-1))
         raise HTTPException(status_code=400, detail="적절한 유튜브 URL을 넣어주세요")
 
     results, video, save_path, title = await process(link)
