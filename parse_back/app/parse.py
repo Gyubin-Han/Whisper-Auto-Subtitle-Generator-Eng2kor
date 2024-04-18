@@ -54,6 +54,7 @@ async def getSubs(segments: Iterator[dict], format: str, maxLineWidth: int, link
 async def inference(link, save_path):
     
     results = []
+    redis_set_value(link, 5) # 5% 완료
     url = "https://tools.gyu.be/model/whisper/transcribe"
     data = {"link": link, "save_path": save_path}
     response = requests.post(url, json=data)

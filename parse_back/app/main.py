@@ -96,6 +96,6 @@ async def get_custom_video_subtitle_download(limited_hash: str):
 if __name__ == "__main__":
     uvicorn.run(app, host='0.0.0.0', port=8000)
 
-@app.get("/status/")
+@app.get("/status")
 def get_value(key: str):
     return redis_get_value(key)
