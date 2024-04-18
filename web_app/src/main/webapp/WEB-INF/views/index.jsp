@@ -179,7 +179,7 @@
           }
         });
 
-        statusUrl(number,url.value);
+        setTimeout(statusUrl,3000,number,url.value);
       }
 
       // 영상 파일 번역 시작
