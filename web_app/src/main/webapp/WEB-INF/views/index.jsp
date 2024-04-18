@@ -95,9 +95,13 @@
           success: function (response) {
             console.log(response);
 
-            updateProgressbar(id,response.value);
-            let timeoutId=setTimeout(statusUrl,1000,id,url);
-            if (response.value >= 100) {
+            let value=response.value;
+            if(!value || value==-1){
+              value=0;
+            }
+            updateProgressbar(id,value);
+            let timeoutId=setTimeout(statusUrl,3000,id,url);
+            if (response.value >= 100 || response.value==-1) {
               clearTimeout(timeoutId);
             }
           },
