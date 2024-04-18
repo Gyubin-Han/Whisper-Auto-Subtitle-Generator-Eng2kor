@@ -79,7 +79,7 @@ async def inference(link, save_path):
     else:
         print(f"요청 실패: {response.status_code}")
         error_detail = response.json().get("detail")
-        update_redis(-1)
+        asyncio.create_task(update_redis(-1))
         raise HTTPException(status_code=response.status_code, detail=error_detail)
     # results = await asyncio.to_thread(loaded_model.transcribe, path, **options)
    

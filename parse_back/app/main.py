@@ -39,6 +39,8 @@ async def get_yt_link(link: str):
     async def update_redis(percentage):
         await asyncio.to_thread(redis_set_value, link, percentage)
         
+    asyncio.create_task(update_redis(0))      
+    
     if not is_valid_youtube(link):
         asyncio.create_task(update_redis(-1))
         raise HTTPException(status_code=400, detail="적절한 유튜브 URL을 넣어주세요")
@@ -52,7 +54,8 @@ async def get_yt_link(link: str):
     async with aiofiles.open(save_path+f"{title}.srt", "w+",encoding='utf8') as f:
         await f.writelines(results[3])
         await f.close()
-                        
+          
+    asyncio.create_task(update_redis(100))              
     return FileResponse(path=video, media_type='application/octet-stream',filename=f"{title}.mp4")
     
 @app.get("/youtube/subtitle_download", response_class=FileResponse)
