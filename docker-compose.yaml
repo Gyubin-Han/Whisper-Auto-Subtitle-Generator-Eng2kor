@@ -34,7 +34,8 @@ services:
       - ./parse_back/app:/code/app # app -> container -> /code/app automatic mapping (auto reload)
     environment:
       - POETRY_VIRTUALENVS_CREATE=false # Poetry doesn't make virtualenv...
-    command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api/v1"]
+    # command: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--root-path", "/api/v1"]
+    command: ["poetry", "run", "gunicorn", "app.main:app", "--workers", "4", "--worker-class", "uvicorn.workers.UvicornWorker", "--access-logfile", "access.log", "--error-logfile", "error.log", "--reuse-port", "--bind", "0.0.0.0:8000", "--threads", "4", "--env", "SCRIPT_NAME=/api/v1"]
     working_dir: /code
     networks:
       - app-network

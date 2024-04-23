@@ -55,7 +55,7 @@ def write_vtt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
             flush=True,
         )
         
-async def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
+def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None):
     """
     Write a transcript to a file in SRT format.
     Example usage:
@@ -71,8 +71,8 @@ async def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None)
         text = processText(segment['text'].strip(), maxLineWidth).replace('-->', '->')
         text = make_full_stop(text)
         # write srt lines
-        await asyncio.to_thread(
-            print,
+        
+        print(
             f"{i}\n"
             f"{format_timestamp(segment['start'], always_include_hours=True, fractionalSeperator=',')} --> "
             f"{format_timestamp(segment['end'], always_include_hours=True, fractionalSeperator=',')}\n"
@@ -83,10 +83,10 @@ async def write_srt(transcript: Iterator[dict], file: TextIO, maxLineWidth=None)
         
 # 10 increment씩 증가하며 분할 요청        
 @logging_time
-async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None, link=None):
+def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=None, link=None):
 
-    async def update_redis(percentage):
-        await asyncio.to_thread(redis_set_value, link, percentage)
+    def update_redis(percentage):
+        redis_set_value(link, percentage)
         
     translator = Translator_GoogleGemini_Multi_Separate()
     
@@ -96,12 +96,12 @@ async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=No
     while indice <= len(transcript):
 
         english_list = get_transcript_list(transcript[indice:indice+increment])
-        translated_text = await translator.translate(indice, english_list)
+        translated_text = translator.translate(indice, english_list)
         translated_text = [item.replace('<paragraph>', '').replace('</paragraph>', '') for item in translated_text]
         try:
             for i, segment in enumerate(transcript[indice:indice+increment], start=indice+1):
-                await asyncio.to_thread(
-                    print,
+                
+                print(
                     f"{i}\n"
                     f"{format_timestamp(segment['start'], always_include_hours=True, fractionalSeperator=',')} --> "
                     f"{format_timestamp(segment['end'], always_include_hours=True, fractionalSeperator=',')}\n"
@@ -115,7 +115,7 @@ async def write_srt_ko(transcript: Iterator[dict], file: TextIO, maxLineWidth=No
         indice += increment
         redis_value = min(10 + int((indice / len(transcript)) * 80), 90)
         
-        asyncio.create_task(update_redis(redis_value))
+        update_redis(redis_value)
         
 def processText(text: str, maxLineWidth=None):
     if (maxLineWidth is None or maxLineWidth < 0):

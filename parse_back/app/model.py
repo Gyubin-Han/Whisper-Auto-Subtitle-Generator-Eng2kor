@@ -239,7 +239,7 @@ class Translator_GoogleGemini_Multi_Separate:
         genai.configure(api_key=os.environ.get('GOOGLE_API_KEY'))
         self.translator = genai.GenerativeModel('gemini-pro')
 
-    async def translate_one(self, text):
+    def translate_one(self, text):
         prompt = f"""
 
         # Rules:
@@ -262,8 +262,7 @@ class Translator_GoogleGemini_Multi_Separate:
         
         # Your translation:"""
         
-        response = await asyncio.to_thread(
-            self.translator.generate_content,
+        response = self.translator.generate_content(
             prompt,
             safety_settings={
                 "HARM_CATEGORY_HARASSMENT": "block_none",
@@ -285,7 +284,7 @@ class Translator_GoogleGemini_Multi_Separate:
         translated_text_list = self.remove_strips(translated_text_list)        
         return translated_text_list[0]
         
-    async def translate(self, indice, text_list: list, source_lang="English", target_lang="Korean"):
+    def translate(self, indice, text_list: list, source_lang="English", target_lang="Korean"):
         result = ""
         for idx, text in enumerate(text_list, start=indice+1):
             result += f"{idx}. {text}<lb/>"
@@ -318,8 +317,7 @@ class Translator_GoogleGemini_Multi_Separate:
         count = 0
         while count < 5: 
             
-            response = await asyncio.to_thread(
-                self.translator.generate_content,
+            response = self.translator.generate_content(
                 prompt,
                 safety_settings={
                     "HARM_CATEGORY_HARASSMENT": "block_none",
@@ -352,7 +350,7 @@ class Translator_GoogleGemini_Multi_Separate:
             print("예외처리 O")    
             for text_idx, text in enumerate(text_list):
                 print(text_idx, ": 진행중")
-                translated_text_list.append(await self.translate_one(text))
+                translated_text_list.append(self.translate_one(text))
         
         # return translated text_list -> list
         return translated_text_list   

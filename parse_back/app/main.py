@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import hashlib
 import aiofiles
 import random
+import os
 import asyncio
 
 # Local Import
@@ -14,7 +15,7 @@ from app.parse import process, populate_metadata, process_upload, background_pro
 from app.utils import make_path, redis_get_value, redis_set_value
 from app.validators import is_valid_youtube, is_video_language_english
 
-app = FastAPI()
+app = FastAPI(root_path="/api/v1")
 
 origins = [
     "*"
@@ -34,34 +35,36 @@ def read_root():
     return {"Hello": "World"}
 
 @app.get("/youtube", response_class=FileResponse)
-async def get_yt_link(link: str):
+def get_yt_link(link: str):
+    print(f"현재 자식 프로세스 : {os.getpid()}")
+    print(f"현재 부모 프로세스 : {os.getppid()}")
     
-    async def update_redis(percentage):
-        await asyncio.to_thread(redis_set_value, link, percentage)
+    def update_redis(percentage):
+        redis_set_value(link, percentage)
         
-    asyncio.create_task(update_redis(0))      
+    update_redis(0)    
     
     if not is_valid_youtube(link):
-        asyncio.create_task(update_redis(-1))
+        update_redis(-1)
         raise HTTPException(status_code=400, detail="적절한 유튜브 URL을 넣어주세요")
 
-    results, video, save_path, title = await process(link)
+    results, video, save_path, title = process(link)
         
-    async with aiofiles.open(save_path+f"{title}_en.srt", "w+",encoding='utf8') as f:
-        await f.writelines(results[2])
-        await f.close()
+    with open(save_path+f"{title}_en.srt", "w+",encoding='utf8') as f:
+        f.writelines(results[2])
+        f.close() 
         
-    async with aiofiles.open(save_path+f"{title}.srt", "w+",encoding='utf8') as f:
-        await f.writelines(results[3])
-        await f.close()
+    with open(save_path+f"{title}.srt", "w+",encoding='utf8') as f:
+        f.writelines(results[3])
+        f.close()
           
-    asyncio.create_task(update_redis(100))              
+    update_redis(100)
     return FileResponse(path=video, media_type='application/octet-stream',filename=f"{title}.mp4")
     
 @app.get("/youtube/subtitle_download", response_class=FileResponse)
-async def get_yt_subtitle(link: str):
+def get_yt_subtitle(link: str):
     
-    author, title, description, thumbnail, length, views = await populate_metadata(link)
+    author, title, description, thumbnail, length, views = populate_metadata(link)
     save_path = make_path(title)
     
     return FileResponse(path=save_path+f"{title}.srt", media_type='application/octet-stream', filename=f"{title}.srt")
