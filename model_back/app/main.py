@@ -55,8 +55,6 @@ app.add_middleware(
 @app.post("/transcribe")
 def model_transcribe(data: dict):
     
-    print(f"현재 model PID: {os.getpid()}")
-    
     def make_dirs(path):
         # 현재 디렉토리 경로 가져오기
         current_dir = os.getcwd()

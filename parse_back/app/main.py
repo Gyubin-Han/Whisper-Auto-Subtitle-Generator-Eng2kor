@@ -36,8 +36,6 @@ def read_root():
 
 @app.get("/youtube", response_class=FileResponse)
 def get_yt_link(link: str):
-    print(f"현재 자식 프로세스 : {os.getpid()}")
-    print(f"현재 부모 프로세스 : {os.getppid()}")
     
     def update_redis(percentage):
         redis_set_value(link, percentage)

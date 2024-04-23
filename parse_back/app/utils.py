@@ -179,5 +179,5 @@ def redis_get_value(key: str):
 
 def redis_set_value(key: str, value: str, ex=300):
     redis_client.set(key, value, ex=ex)
-    print(f"message : Key {key} set to {value}")
+    print(f"Info : Key {key} set to {value}")
     return {"message": f"Key '{key}' set to '{value}'"}

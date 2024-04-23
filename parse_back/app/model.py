@@ -348,8 +348,7 @@ class Translator_GoogleGemini_Multi_Separate:
 
             translated_text_list = []
             print("예외처리 O")    
-            for text_idx, text in enumerate(text_list):
-                print(text_idx, ": 진행중")
+            for text in text_list:
                 translated_text_list.append(self.translate_one(text))
         
         # return translated text_list -> list
@@ -359,13 +358,12 @@ class Translator_GoogleGemini_Multi_Separate:
     def vaild_response(self, translated_text_list, indice):
         
         # Get the translated text from the response
-        
-        if len(translated_text_list) > indice:
-            return False
-        elif len(translated_text_list) == indice:
+    
+        if len(translated_text_list) == indice:
             return True
-        elif len(translated_text_list) < indice:
-            return False
+        
+        return False
+ 
         
     def remove_strips(self, translated_text_list):
         

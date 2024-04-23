@@ -62,7 +62,7 @@ def inference(link, save_path):
         redis_set_value(link, percentage)
         
     results = []
-    update_redis(5) # 5% 완료 not working well..
+    update_redis(5)
     url = "https://tools.gyu.be/model/whisper/transcribe"
     data = {"link": link, "save_path": save_path}
     response = requests.post(url, json=data)
