@@ -9,12 +9,13 @@ import aiofiles
 import random
 import os
 import asyncio
+import ffmpeg
 
 # Local Import
 from app.parse import process, populate_metadata, process_upload, background_process
 from app.utils import make_path, redis_get_value, redis_set_value
 from app.validators import is_valid_youtube, is_video_language_english
-
+from app.media_utils import get_concat_subtitles
 app = FastAPI(root_path="/api/v1")
 
 origins = [
@@ -55,9 +56,14 @@ def get_yt_link(link: str):
     with open(save_path+f"{title}.srt", "w+",encoding='utf8') as f:
         f.writelines(results[3])
         f.close()
-          
+    
+    subtitled_video = get_concat_subtitles(video, subtitle_path=save_path+f"{title}.srt", save_path=save_path)
+    
+    # video는 현재, 기본 동영상
+    # subtitled_video는 자막이 적용된 영상
     update_redis(100)
-    return FileResponse(path=video, media_type='application/octet-stream',filename=f"{title}.mp4")
+
+    return FileResponse(path=subtitled_video, media_type='application/octet-stream',filename=f"{title}.mp4")
     
 @app.get("/youtube/subtitle_download", response_class=FileResponse)
 def get_yt_subtitle(link: str):
